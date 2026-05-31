@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IJob extends Document {
   title: string;
+  description: string;
   clientName?: string;
   platform: string;
   jobLink: string;
@@ -17,6 +18,7 @@ export interface IJob extends Document {
 
 const JobSchema: Schema = new Schema({
   title: { type: String, required: true },
+  description: { type: String, default: "" },
   clientName: { type: String, default: "" },
   platform: { type: String, default: "Upwork" },
   jobLink: { type: String, required: true },

@@ -58,6 +58,7 @@ Strict filtering rules:
 
 For each accepted job, extract the following fields:
 - title: Job title
+- description: Full job description text, preserve all details
 - clientName: Client name, if available (empty string if not found)
 - platform: "Upwork" (or source platform if different)
 - jobLink: Full job URL
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
     const rawContent = completion.choices[0].message.content || "[]";
     let jobs: Array<{
       title: string;
+      description: string;
       clientName?: string;
       platform?: string;
       jobLink: string;
@@ -179,6 +181,7 @@ export async function POST(request: NextRequest) {
 
         await Job.create({
           title: job.title || "Untitled",
+          description: job.description || "",
           clientName: job.clientName || "",
           platform: job.platform || "Upwork",
           jobLink: link,

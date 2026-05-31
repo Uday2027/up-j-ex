@@ -10,6 +10,7 @@ export async function GET() {
 
     const data = jobs.map((job: any) => ({
       Title: job.title,
+      Description: job.description || "",
       "Client Name": job.clientName || "",
       Platform: job.platform || "Upwork",
       "Job Link": job.jobLink,

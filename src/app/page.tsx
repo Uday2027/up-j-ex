@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 interface Job {
   _id: string;
   title: string;
+  description: string;
   clientName: string;
   platform: string;
   jobLink: string;
@@ -322,6 +323,7 @@ export default function Home() {
               <thead className="bg-gray-50 text-gray-700 font-semibold">
                 <tr>
                   <th className="px-4 py-3">Title</th>
+                  <th className="px-4 py-3">Description</th>
                   <th className="px-4 py-3">Client</th>
                   <th className="px-4 py-3">Budget</th>
                   <th className="px-4 py-3">Posted</th>
@@ -340,6 +342,9 @@ export default function Home() {
                   <tr key={job._id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate" title={job.title}>
                       {job.title}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 max-w-md">
+                      <div className="line-clamp-3 text-xs">{job.description || "—"}</div>
                     </td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                       {job.clientName || "—"}
@@ -421,6 +426,7 @@ export default function Home() {
                 <thead className="bg-gray-100 text-gray-700 font-semibold sticky top-0">
                   <tr>
                     <th className="px-4 py-3 border-b">Title</th>
+                    <th className="px-4 py-3 border-b">Description</th>
                     <th className="px-4 py-3 border-b">Client</th>
                     <th className="px-4 py-3 border-b">Platform</th>
                     <th className="px-4 py-3 border-b">Budget</th>
@@ -439,6 +445,9 @@ export default function Home() {
                     <tr key={job._id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">
                         {job.title}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 max-w-sm">
+                        <div className="line-clamp-3 text-xs">{job.description || "—"}</div>
                       </td>
                       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                         {job.clientName || "—"}
