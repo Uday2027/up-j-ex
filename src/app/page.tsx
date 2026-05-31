@@ -29,6 +29,9 @@ export default function Home() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState("");
+  const [serviceAccountFile, setServiceAccountFile] = useState<File | null>(null);
+  const [sheetsUploading, setSheetsUploading] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -149,6 +152,42 @@ export default function Home() {
       setMessage(err.message || "Delete failed");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleSheetsUpload = async () => {
+    if (!sheetUrl.trim()) {
+      setMessage("Please enter a Google Sheet URL");
+      return;
+    }
+    if (!serviceAccountFile) {
+      setMessage("Please upload the Service Account JSON file");
+      return;
+    }
+
+    setSheetsUploading(true);
+    setMessage("");
+
+    const formData = new FormData();
+    formData.append("sheetUrl", sheetUrl);
+    formData.append("serviceAccount", serviceAccountFile);
+
+    try {
+      const res = await fetch("/api/sheets", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage(`Uploaded ${data.uploaded} jobs to Google Sheets successfully!`);
+      } else {
+        setMessage(data.error || "Google Sheets upload failed");
+      }
+    } catch (err: any) {
+      setMessage(err.message || "Google Sheets upload failed");
+    } finally {
+      setSheetsUploading(false);
     }
   };
 
@@ -288,6 +327,53 @@ export default function Home() {
             {message}
           </div>
         )}
+
+        {/* Google Sheets Upload */}
+        <div className="mt-6 border-t border-gray-200 pt-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            Upload to Google Sheets
+          </h3>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="Paste Google Sheet URL here"
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) =>
+                  setServiceAccountFile(e.target.files?.[0] || null)
+                }
+              />
+              <span
+                className={`inline-block px-4 py-2.5 border rounded-lg text-sm font-medium ${
+                  serviceAccountFile
+                    ? "border-green-300 bg-green-50 text-green-700"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {serviceAccountFile
+                  ? "JSON loaded ✓"
+                  : "Service Account JSON"}
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={handleSheetsUpload}
+              disabled={sheetsUploading || jobs.length === 0}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              {sheetsUploading
+                ? "Uploading..."
+                : "Upload to Google Sheet"}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
