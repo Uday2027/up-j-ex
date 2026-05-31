@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const clearSheet = formData.get("clearSheet") === "true";
+
     const sheetId = extractSheetId(sheetUrl);
     if (!sheetId) {
       return NextResponse.json(
@@ -53,7 +55,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No jobs to upload" }, { status: 400 });
     }
 
-    // Check if sheet has headers, if not add them
     const headers = [
       "Title",
       "Description",
@@ -70,34 +71,46 @@ export async function POST(request: NextRequest) {
       "Uploaded At",
     ];
 
-    // Try to read first row to check if headers exist
-    try {
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: "Sheet1!A1:A1",
-      });
-      const existing = response.data.values;
-      if (!existing || existing.length === 0 || !existing[0][0]) {
-        // Add headers
-        await sheets.spreadsheets.values.append({
+    if (clearSheet) {
+      // Clear all data and rewrite headers
+      try {
+        await sheets.spreadsheets.values.clear({
           spreadsheetId: sheetId,
-          range: "Sheet1!A1",
-          valueInputOption: "RAW",
-          requestBody: {
-            values: [headers],
-          },
+          range: "Sheet1",
         });
+      } catch {
+        // ignore clear errors
       }
-    } catch {
-      // If read fails, assume sheet is empty and add headers
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
         range: "Sheet1!A1",
         valueInputOption: "RAW",
-        requestBody: {
-          values: [headers],
-        },
+        requestBody: { values: [headers] },
       });
+    } else {
+      // Try to read first row to check if headers exist
+      try {
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: "Sheet1!A1:A1",
+        });
+        const existing = response.data.values;
+        if (!existing || existing.length === 0 || !existing[0][0]) {
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: sheetId,
+            range: "Sheet1!A1",
+            valueInputOption: "RAW",
+            requestBody: { values: [headers] },
+          });
+        }
+      } catch {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: sheetId,
+          range: "Sheet1!A1",
+          valueInputOption: "RAW",
+          requestBody: { values: [headers] },
+        });
+      }
     }
 
     const rows = jobs.map((job: any) => [

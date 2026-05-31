@@ -33,6 +33,7 @@ export default function Home() {
   const [serviceAccountFile, setServiceAccountFile] = useState<File | null>(null);
   const [sheetsUploading, setSheetsUploading] = useState(false);
   const [autoSync, setAutoSync] = useState(false);
+  const [clearSheet, setClearSheet] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -175,6 +176,7 @@ export default function Home() {
     const formData = new FormData();
     formData.append("sheetUrl", sheetUrl);
     formData.append("serviceAccount", serviceAccountFile);
+    formData.append("clearSheet", clearSheet ? "true" : "false");
 
     try {
       const res = await fetch("/api/sheets", {
@@ -338,15 +340,26 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-gray-700">
               Upload to Google Sheets
             </h3>
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoSync}
-                onChange={(e) => setAutoSync(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              Auto-sync after extract
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSync}
+                  onChange={(e) => setAutoSync(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Auto-sync after extract
+              </label>
+              <label className="flex items-center gap-2 text-sm text-red-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={clearSheet}
+                  onChange={(e) => setClearSheet(e.target.checked)}
+                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                />
+                Clear old data first
+              </label>
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
