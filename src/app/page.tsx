@@ -32,6 +32,7 @@ export default function Home() {
   const [sheetUrl, setSheetUrl] = useState("");
   const [serviceAccountFile, setServiceAccountFile] = useState<File | null>(null);
   const [sheetsUploading, setSheetsUploading] = useState(false);
+  const [autoSync, setAutoSync] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoadingJobs(true);
@@ -78,6 +79,9 @@ export default function Home() {
         );
         fetchJobs();
         setFile(null);
+        if (autoSync && sheetUrl && serviceAccountFile) {
+          setTimeout(() => handleSheetsUpload(), 500);
+        }
       } else {
         setMessage(data.error || "Something went wrong");
       }
@@ -330,9 +334,20 @@ export default function Home() {
 
         {/* Google Sheets Upload */}
         <div className="mt-6 border-t border-gray-200 pt-6">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Upload to Google Sheets
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700">
+              Upload to Google Sheets
+            </h3>
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoSync}
+                onChange={(e) => setAutoSync(e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              Auto-sync after extract
+            </label>
+          </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
