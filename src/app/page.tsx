@@ -325,6 +325,7 @@ export default function Home() {
                   <th className="px-4 py-3">Client</th>
                   <th className="px-4 py-3">Budget</th>
                   <th className="px-4 py-3">Posted</th>
+                  <th className="px-4 py-3">Added</th>
                   <th className="px-4 py-3">Tools</th>
                   <th className="px-4 py-3">Urgency</th>
                   <th className="px-4 py-3">Fit</th>
@@ -348,6 +349,9 @@ export default function Home() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
                       {job.postedTime || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
+                      {new Date(job.uploadedAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-gray-600 max-w-xs truncate text-xs" title={job.requiredTools}>
                       {job.requiredTools || "—"}
