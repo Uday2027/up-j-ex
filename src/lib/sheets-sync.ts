@@ -9,9 +9,19 @@ function extractSheetId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-function getAuth() {
+function getServiceAccount(): object {
+  // Production / serverless: read from env var
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  }
+
+  // Local dev fallback: read from file
   const serviceAccountPath = join(process.cwd(), "service-account.json");
-  const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+  return JSON.parse(readFileSync(serviceAccountPath, "utf-8"));
+}
+
+function getAuth() {
+  const serviceAccount = getServiceAccount();
 
   return new google.auth.GoogleAuth({
     credentials: serviceAccount,
