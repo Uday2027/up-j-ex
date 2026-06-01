@@ -24,15 +24,12 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [loadingJobs, setLoadingJobs] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [sheetUrl, setSheetUrl] = useState("");
-  const [serviceAccountFile, setServiceAccountFile] = useState<File | null>(null);
   const [sheetsUploading, setSheetsUploading] = useState(false);
-  const [autoSync, setAutoSync] = useState(false);
   const [clearSheet, setClearSheet] = useState(false);
 
   const fetchJobs = useCallback(async () => {
@@ -51,8 +48,22 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+    let cancelled = false;
+    fetch("/api/jobs")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.jobs) setJobs(data.jobs);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error("Failed to fetch jobs", err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingJobs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleUpload = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -80,14 +91,15 @@ export default function Home() {
         );
         fetchJobs();
         setFile(null);
-        if (autoSync && sheetUrl && serviceAccountFile) {
-          setTimeout(() => handleSheetsUpload(), 500);
+        if (data.sheetsSynced) {
+          setMessage((prev) => prev + " Auto-synced to Google Sheets.");
         }
       } else {
         setMessage(data.error || "Something went wrong");
       }
-    } catch (err: any) {
-      setMessage(err.message || "Upload failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setMessage(message);
     } finally {
       setUploading(false);
     }
@@ -135,8 +147,9 @@ export default function Home() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setMessage(err.message || "Download failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Download failed";
+      setMessage(message);
     } finally {
       setDownloading(false);
     }
@@ -153,29 +166,19 @@ export default function Home() {
       } else {
         setMessage(data.error || "Delete failed");
       }
-    } catch (err: any) {
-      setMessage(err.message || "Delete failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Delete failed";
+      setMessage(message);
     } finally {
       setDeletingId(null);
     }
   };
 
   const handleSheetsUpload = async () => {
-    if (!sheetUrl.trim()) {
-      setMessage("Please enter a Google Sheet URL");
-      return;
-    }
-    if (!serviceAccountFile) {
-      setMessage("Please upload the Service Account JSON file");
-      return;
-    }
-
     setSheetsUploading(true);
     setMessage("");
 
     const formData = new FormData();
-    formData.append("sheetUrl", sheetUrl);
-    formData.append("serviceAccount", serviceAccountFile);
     formData.append("clearSheet", clearSheet ? "true" : "false");
 
     try {
@@ -190,8 +193,9 @@ export default function Home() {
       } else {
         setMessage(data.error || "Google Sheets upload failed");
       }
-    } catch (err: any) {
-      setMessage(err.message || "Google Sheets upload failed");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google Sheets upload failed";
+      setMessage(message);
     } finally {
       setSheetsUploading(false);
     }
@@ -340,56 +344,17 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-gray-700">
               Upload to Google Sheets
             </h3>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoSync}
-                  onChange={(e) => setAutoSync(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                Auto-sync after extract
-              </label>
-              <label className="flex items-center gap-2 text-sm text-red-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={clearSheet}
-                  onChange={(e) => setClearSheet(e.target.checked)}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                />
-                Clear old data first
-              </label>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Paste Google Sheet URL here"
-              value={sheetUrl}
-              onChange={(e) => setSheetUrl(e.target.value)}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-            <label className="cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-red-600 cursor-pointer">
               <input
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={(e) =>
-                  setServiceAccountFile(e.target.files?.[0] || null)
-                }
+                type="checkbox"
+                checked={clearSheet}
+                onChange={(e) => setClearSheet(e.target.checked)}
+                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
               />
-              <span
-                className={`inline-block px-4 py-2.5 border rounded-lg text-sm font-medium ${
-                  serviceAccountFile
-                    ? "border-green-300 bg-green-50 text-green-700"
-                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {serviceAccountFile
-                  ? "JSON loaded ✓"
-                  : "Service Account JSON"}
-              </span>
+              Clear old data first
             </label>
+          </div>
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleSheetsUpload}
@@ -400,6 +365,9 @@ export default function Home() {
                 ? "Uploading..."
                 : "Upload to Google Sheet"}
             </button>
+            <span className="text-xs text-gray-500">
+              Credentials configured via environment variables
+            </span>
           </div>
         </div>
       </div>

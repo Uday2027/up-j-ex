@@ -7,10 +7,11 @@ export async function GET() {
     await connectDB();
     const jobs = await Job.find().sort({ uploadedAt: -1 }).lean();
     return NextResponse.json({ jobs });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Jobs API error:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

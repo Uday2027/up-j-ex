@@ -8,7 +8,7 @@ export async function GET() {
     await connectDB();
     const jobs = await Job.find().sort({ uploadedAt: -1 }).lean();
 
-    const data = jobs.map((job: any) => ({
+    const data = jobs.map((job) => ({
       Title: job.title,
       Description: job.description || "",
       "Client Name": job.clientName || "",
@@ -37,10 +37,11 @@ export async function GET() {
         "Content-Disposition": 'attachment; filename="plugwheel_jobs.xlsx"',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Export API error:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

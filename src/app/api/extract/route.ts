@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)```|```\s*([\s\S]*?)```/);
       const jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : rawContent;
       jobs = JSON.parse(jsonString.trim());
-    } catch (e) {
+    } catch {
       console.error("Failed to parse OpenAI response:", rawContent);
       return NextResponse.json(
         { error: "Failed to parse extracted data from LLM" },
@@ -194,12 +194,25 @@ export async function POST(request: NextRequest) {
           serviceCategory,
         });
         inserted++;
-      } catch (err: any) {
-        if (err.code === 11000) {
+      } catch (err) {
+        const mongoErr = err as { code?: number };
+        if (mongoErr.code === 11000) {
           duplicates++;
         } else {
           console.error("Error inserting job:", err);
         }
+      }
+    }
+
+    // Auto-sync to Google Sheets if configured
+    let sheetsSynced = false;
+    if (process.env.GOOGLE_SHEET_URL && inserted > 0) {
+      try {
+        const { syncToSheets } = await import("@/lib/sheets-sync");
+        await syncToSheets();
+        sheetsSynced = true;
+      } catch (err) {
+        console.error("Auto-sync to Google Sheets failed:", err);
       }
     }
 
@@ -208,11 +221,13 @@ export async function POST(request: NextRequest) {
       extracted: jobs.length,
       inserted,
       duplicates,
+      sheetsSynced,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Extract API error:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }

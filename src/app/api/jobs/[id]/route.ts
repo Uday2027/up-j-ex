@@ -16,10 +16,11 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true, message: "Job deleted" });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Delete API error:", error);
+    const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 }
     );
   }
